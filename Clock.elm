@@ -4,7 +4,7 @@ import Html.App as App
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Time exposing (Time, second)
-
+import Date as Date
 
 
 main =
@@ -26,7 +26,8 @@ type alias Model =
 
 init : (Model, Cmd Msg)
 init =
-  (Model 0 False, Cmd.none)
+  (Model 0 False, Cmd.none) -- use Tick and Time.now like Tick Time.now
+  -- not needed, current time is already in Time.every
 
 
 -- UPDATE
@@ -43,6 +44,7 @@ update action model =
       ({ model | time = newTime }, Cmd.none)
     PauseClock ->
       ({ model | isPaused = not model.isPaused }, Cmd.none)
+
 
 -- SUBSCRIPTIONS
 
@@ -68,15 +70,31 @@ renderClock model =
 
     handY =
       toString (50 + 40 * sin angle)
+
+    angleMinutes =
+      turns (Time.inHours model.time)
+
+    handMinutesX =
+      toString (50 + 40 * cos angleMinutes)
+
+    handMinutesY =
+      toString (50 + 40 * sin angleMinutes)
+
   in
     svg [ viewBox "0 0 100 100", width "300px" ]
       [ circle [ cx "50", cy "50", r "45", fill "#0B79CE" ] []
-      , line [ x1 "50", y1 "50", x2 handX, y2 handY, stroke "#023963" ] []
+      , line [ x1 "50", y1 "50", x2 handX, y2 handY, stroke "#023963" ] [] -- seconds
+      , line [ x1 "50", y1 "50", x2 handMinutesX, y2 handMinutesY, stroke "#023963" ] []
       ]
+
+getHour : Time -> Int
+getHour time =
+  Date.hour(Date.fromTime time)
 
 view : Model -> Html Msg
 view model =
   Html.div []
     [ renderClock model
+    , Html.div [] [text (toString (Date.hour(Date.fromTime model.time)) ++ ":" ++ toString (Date.minute(Date.fromTime model.time)) )]
     , Html.button [Html.Events.onClick PauseClock] [ text (if model.isPaused then "Move!" else "Halt!")]
     ]
